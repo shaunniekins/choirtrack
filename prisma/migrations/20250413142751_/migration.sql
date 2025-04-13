@@ -2,7 +2,6 @@
 CREATE TABLE "Hymn" (
     "id" TEXT NOT NULL,
     "title" TEXT NOT NULL,
-    "arranger" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -21,6 +20,9 @@ CREATE TABLE "UsageHistory" (
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Hymn_title_key" ON "Hymn"("title");
+
+-- CreateIndex
+CREATE INDEX "Hymn_title_idx" ON "Hymn"("title");
 
 -- CreateIndex
 CREATE INDEX "UsageHistory_hymnId_sungDate_idx" ON "UsageHistory"("hymnId", "sungDate");

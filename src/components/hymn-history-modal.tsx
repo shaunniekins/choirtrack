@@ -2,8 +2,8 @@
 
 import React, { useState, useTransition, useEffect } from "react";
 import { format } from "date-fns";
-// Add Alert Dialog components for confirmation
-import { Loader2, XCircle, Trash2, AlertTriangle } from "lucide-react";
+// Remove AlertTriangle from imports
+import { Loader2, XCircle, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -206,7 +206,8 @@ export function HymnHistoryModal({
                 <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                 <AlertDialogDescription>
                   This action cannot be undone. This will permanently delete the
-                  hymn "{hymnData?.title}" and all of its usage history.
+                  hymn &quot;{hymnData?.title}&quot; and all of its usage
+                  history.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>

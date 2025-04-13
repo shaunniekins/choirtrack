@@ -10,20 +10,13 @@ async function HymnListLoader({
 }: {
   searchParams: { [key: string]: string | string[] | undefined }; // Update prop type
 }) {
-  // Await searchParams before accessing its properties
-  const resolvedSearchParams = await searchParams;
-
-  // Extract and process search param
+  // Extract and process search param directly from searchParams
   const search =
-    typeof resolvedSearchParams.search === "string"
-      ? resolvedSearchParams.search
-      : undefined;
+    typeof searchParams.search === "string" ? searchParams.search : undefined;
 
-  // Extract and process sort param
+  // Extract and process sort param directly from searchParams
   const currentSortParam =
-    typeof resolvedSearchParams.sort === "string"
-      ? resolvedSearchParams.sort
-      : undefined;
+    typeof searchParams.sort === "string" ? searchParams.sort : undefined;
 
   // Validate and cast sort param
   const validSorts: GetHymnsSort[] = [
@@ -77,15 +70,18 @@ function HymnTableSkeleton() {
   );
 }
 
-// Define the props type explicitly using a more general searchParams type
-interface HomePageProps {
-  searchParams: { [key: string]: string | string[] | undefined };
-}
+// Make the main page component async and update the searchParams type
+export default async function HomePage({
+  searchParams: searchParamsPromise, // Rename prop to indicate it's a promise
+}: {
+  // Type searchParams as a Promise
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+  // Await the promise to get the actual searchParams object
+  const searchParams = await searchParamsPromise;
 
-// The main page component (Server Component) - Ensure it's not async
-export default function HomePage({ searchParams }: HomePageProps) {
   return (
-    <main className="container mx-auto py-8 px-4">
+    <main className="container mx-auto px-4 lg:px-52 py-8">
       <h1 className="text-3xl font-bold mb-6">ChoirTrack - BBC Atis</h1>
 
       {/* Filters are client components for interactivity */}
@@ -93,7 +89,7 @@ export default function HomePage({ searchParams }: HomePageProps) {
 
       {/* Use Suspense for loading state while data fetches */}
       <Suspense fallback={<HymnTableSkeleton />}>
-        {/* Pass the entire searchParams object */}
+        {/* Pass the resolved searchParams object */}
         <HymnListLoader searchParams={searchParams} />
       </Suspense>
 

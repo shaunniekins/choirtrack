@@ -157,7 +157,7 @@ export function HymnTable({ hymns }: HymnTableProps) {
                   colSpan={3}
                   className="h-24 text-center text-muted-foreground px-4 py-4"
                 >
-                  No hymns found.
+                  No music found.
                 </TableCell>
               </TableRow>
             ) : (
