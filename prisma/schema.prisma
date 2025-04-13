@@ -1,0 +1,28 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Hymn {
+  id           String         @id @default(cuid())
+  title        String         @unique
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  usageHistory UsageHistory[]
+
+  @@index([title])
+}
+
+model UsageHistory {
+  id        String   @id @default(cuid())
+  sungDate  DateTime
+  hymnId    String
+  hymn      Hymn     @relation(fields: [hymnId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([hymnId, sungDate])
+}
