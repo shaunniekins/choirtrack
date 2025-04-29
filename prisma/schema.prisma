@@ -21,6 +21,7 @@ model Hymn {
   usageHistory UsageHistory[]
 
   @@index([title])
+  @@map("hymn")
 }
 
 model UsageHistory {
@@ -31,6 +32,7 @@ model UsageHistory {
   createdAt DateTime @default(now())
 
   @@index([hymnId, sungDate])
+  @@map("usage_history")
 }
 
 // Auth.js Models

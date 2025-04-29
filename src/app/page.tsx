@@ -3,6 +3,8 @@ import { HymnTable } from "@/components/hymn-table";
 import { HymnFilters } from "@/components/hymn-filters";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getHymns, GetHymnsSort } from "./actions";
+// Import the SignOutButton
+import { SignOutButton } from "@/components/auth/sign-out-button";
 
 // Async component to fetch and display hymns
 async function HymnListLoader({
@@ -82,19 +84,16 @@ export default async function HomePage({
 
   return (
     <main className="container mx-auto px-4 lg:px-52 py-8">
-      <h1 className="text-3xl font-bold mb-6">ChoirTrack - BBC Atis</h1>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold">ChoirTrack - BBC Atis</h1>
+        <SignOutButton />
+      </div>
 
-      {/* Filters are client components for interactivity */}
       <HymnFilters />
 
-      {/* Use Suspense for loading state while data fetches */}
       <Suspense fallback={<HymnTableSkeleton />}>
-        {/* Pass the resolved searchParams object */}
         <HymnListLoader searchParams={searchParams} />
       </Suspense>
-
-      {/* Optional: Add Hymn Area - Maybe a separate component/modal triggered by a button */}
-      {/* <AddHymnForm /> */}
     </main>
   );
 }
