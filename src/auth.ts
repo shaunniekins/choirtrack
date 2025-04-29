@@ -79,7 +79,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           console.log(`[Auth][Authorize] Login successful for ${email}`);
           // Return user object if credentials are valid
           // Correctly exclude password from the returned user object
-          const { password: _, ...userWithoutPassword } = user;
+          const { ...userWithoutPassword } = user;
           return userWithoutPassword;
         } catch (error) {
           console.error("[Auth][Authorize] Error during authorization:", error);
@@ -102,7 +102,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   },
   callbacks: {
     // Include user ID and email in the JWT token
-    async jwt({ token, user, trigger, session }) {
+    async jwt({ token, user }) {
       // Initial sign-in
       if (user) {
         console.log("[Auth][JWT] Adding user info to token:", {
