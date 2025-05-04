@@ -30,7 +30,7 @@ async function HymnListLoader({
   const sort: GetHymnsSort =
     currentSortParam && validSorts.includes(currentSortParam as GetHymnsSort)
       ? (currentSortParam as GetHymnsSort)
-      : "title-asc"; // Default sort
+      : "last-sung-desc"; // Changed default sort to "last-sung-desc"
 
   // Fetch data using the server action with processed values
   const result = await getHymns({ search, sort });

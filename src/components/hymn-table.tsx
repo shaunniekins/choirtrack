@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState, useTransition, useRef, useEffect } from "react";
-import { format, formatDistanceToNow } from "date-fns";
+import { format, isToday, isYesterday, differenceInDays } from "date-fns";
 import {
   Table,
   TableBody,
@@ -133,6 +133,22 @@ export function HymnTable({ hymns }: HymnTableProps) {
     setIsHistoryModalOpen(true);
   };
 
+  // Function to format date in a relative way without time
+  const formatRelativeDate = (date: Date): string => {
+    if (isToday(date)) {
+      return "Today";
+    } else if (isYesterday(date)) {
+      return "Yesterday";
+    } else {
+      const daysAgo = differenceInDays(new Date(), date);
+      if (daysAgo < 30) {
+        return `${daysAgo} days ago`;
+      } else {
+        return format(date, "MMM d, yyyy");
+      }
+    }
+  };
+
   return (
     <>
       <div className="rounded-md border overflow-hidden">
@@ -168,10 +184,8 @@ export function HymnTable({ hymns }: HymnTableProps) {
                   </TableCell>
                   <TableCell className="px-4 py-3 text-muted-foreground align-middle text-center text-sm">
                     {hymn.lastSungDate ? (
-                      <span title={format(hymn.lastSungDate, "PPP p")}>
-                        {formatDistanceToNow(hymn.lastSungDate, {
-                          addSuffix: true,
-                        })}
+                      <span title={format(hymn.lastSungDate, "PPP")}>
+                        {formatRelativeDate(hymn.lastSungDate)}
                       </span>
                     ) : (
                       "Never"

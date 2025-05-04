@@ -217,7 +217,7 @@ export function HymnHistoryModal({
                 <AlertDialogAction
                   onClick={handleDeleteHymn}
                   disabled={isDeletingHymn}
-                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90 text-white"
                 >
                   {isDeletingHymn ? (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />

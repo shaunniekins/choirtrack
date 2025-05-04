@@ -32,6 +32,10 @@ type FormErrors = {
   title?: string[];
 };
 
+// localStorage keys
+const SEARCH_STORAGE_KEY = "choirtrack-search";
+const SORT_STORAGE_KEY = "choirtrack-sort";
+
 export function HymnFilters() {
   const router = useRouter();
   const pathname = usePathname();
@@ -44,12 +48,26 @@ export function HymnFilters() {
   const [formErrors, setFormErrors] = useState<FormErrors>({});
   const formRef = useRef<HTMLFormElement>(null);
 
-  const [searchTerm, setSearchTerm] = useState(
-    searchParams.get("search") || ""
-  );
-  const [sortOrder, setSortOrder] = useState<GetHymnsSort>(
-    (searchParams.get("sort") as GetHymnsSort | null) || "title-asc"
-  );
+  // Initialize search term from URL params or localStorage
+  const [searchTerm, setSearchTerm] = useState(() => {
+    const paramSearch = searchParams.get("search") || "";
+    if (typeof window !== "undefined") {
+      return paramSearch || localStorage.getItem(SEARCH_STORAGE_KEY) || "";
+    }
+    return paramSearch;
+  });
+
+  // Initialize sort order from URL params, localStorage, or "last-sung-desc" as default
+  const [sortOrder, setSortOrder] = useState<GetHymnsSort>(() => {
+    const paramSort = searchParams.get("sort") as GetHymnsSort | null;
+    if (typeof window !== "undefined") {
+      const storedSort = localStorage.getItem(
+        SORT_STORAGE_KEY
+      ) as GetHymnsSort | null;
+      return paramSort || storedSort || "last-sung-desc";
+    }
+    return paramSort || "last-sung-desc";
+  });
 
   const debouncedUpdateParams = useRef(
     debounce((newSearchTerm: string, currentSortOrder: GetHymnsSort) => {
@@ -59,7 +77,7 @@ export function HymnFilters() {
       } else {
         params.delete("search");
       }
-      if (currentSortOrder && currentSortOrder !== "title-asc") {
+      if (currentSortOrder && currentSortOrder !== "last-sung-desc") {
         params.set("sort", currentSortOrder);
       } else {
         params.delete("sort");
@@ -72,11 +90,19 @@ export function HymnFilters() {
   ).current;
 
   useEffect(() => {
-    setSearchTerm(searchParams.get("search") || "");
-    setSortOrder(
-      (searchParams.get("sort") as GetHymnsSort | null) || "title-asc"
-    );
+    const paramSearch = searchParams.get("search") || "";
+    const paramSort =
+      (searchParams.get("sort") as GetHymnsSort | null) || "last-sung-desc";
+    setSearchTerm(paramSearch);
+    setSortOrder(paramSort);
   }, [searchParams]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem(SEARCH_STORAGE_KEY, searchTerm);
+      localStorage.setItem(SORT_STORAGE_KEY, sortOrder);
+    }
+  }, [searchTerm, sortOrder]);
 
   useEffect(() => {
     debouncedUpdateParams(searchTerm, sortOrder);
