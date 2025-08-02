@@ -15,6 +15,8 @@ export type GetHymnsSort =
   | "last-sung-asc"
   | "last-sung-desc";
 
+export type HistoryFilter = "all" | "with-history" | "no-history";
+
 export type HymnWithLastSung = Prisma.HymnGetPayload<{
   include: {
     usageHistory: {
@@ -27,8 +29,11 @@ export type HymnWithLastSung = Prisma.HymnGetPayload<{
 export async function getHymns(params: {
   search?: string;
   sort?: GetHymnsSort;
+  historyFilter?: HistoryFilter;
+  page?: number;
+  limit?: number;
 }) {
-  const { search, sort } = params;
+  const { search, sort, historyFilter = "all", page = 1, limit = 20 } = params;
 
   const where: Prisma.HymnWhereInput = {};
   if (search) {
@@ -58,6 +63,7 @@ export async function getHymns(params: {
   }
 
   try {
+    // First, get all hymns matching the criteria (without pagination for filtering)
     const hymnsRaw = await prisma.hymn.findMany({
       where,
       orderBy,
@@ -70,10 +76,17 @@ export async function getHymns(params: {
     });
 
     // Map the result to include a top-level lastSungDate
-    const hymns: HymnWithLastSung[] = hymnsRaw.map((hymn) => ({
+    let hymns: HymnWithLastSung[] = hymnsRaw.map((hymn) => ({
       ...hymn,
       lastSungDate: hymn.usageHistory[0]?.sungDate ?? null,
     }));
+
+    // Apply history filter
+    if (historyFilter === "with-history") {
+      hymns = hymns.filter((hymn) => hymn.lastSungDate !== null);
+    } else if (historyFilter === "no-history") {
+      hymns = hymns.filter((hymn) => hymn.lastSungDate === null);
+    }
 
     // Post-processing sort for last sung date
     if (requiresPostProcessingSort) {
@@ -88,17 +101,49 @@ export async function getHymns(params: {
           if (dateB === null) return 1;
           return dateA.getTime() - dateB.getTime(); // Oldest first
         } else {
-          // last-sung-desc
-          // Nulls (never sung) last
+          // last-sung-desc - Nulls (never sung) FIRST per requirement
           if (dateA === null && dateB === null) return 0;
-          if (dateA === null) return 1;
-          if (dateB === null) return -1;
+          if (dateA === null) return -1; // Changed: Nulls first
+          if (dateB === null) return 1;
           return dateB.getTime() - dateA.getTime(); // Newest first
+        }
+      });
+    } else if (sort === "title-asc" || sort === "title-desc") {
+      // For title sorts, also ensure no-history songs are at top
+      hymns.sort((a, b) => {
+        // First, sort by history status (no history first)
+        const aHasHistory = a.lastSungDate !== null;
+        const bHasHistory = b.lastSungDate !== null;
+
+        if (!aHasHistory && bHasHistory) return -1;
+        if (aHasHistory && !bHasHistory) return 1;
+
+        // Then sort by title within each group
+        if (sort === "title-desc") {
+          return b.title.localeCompare(a.title);
+        } else {
+          return a.title.localeCompare(b.title);
         }
       });
     }
 
-    return { success: true as const, data: hymns };
+    // Apply pagination
+    const totalCount = hymns.length;
+    const totalPages = Math.ceil(totalCount / limit);
+    const skip = (page - 1) * limit;
+    const paginatedHymns = hymns.slice(skip, skip + limit);
+
+    return {
+      success: true as const,
+      data: paginatedHymns,
+      pagination: {
+        page,
+        limit,
+        totalCount,
+        totalPages,
+        hasMore: page < totalPages,
+      },
+    };
   } catch (error) {
     console.error("Error fetching hymns:", error);
     return { success: false as const, error: "Failed to fetch hymns." };

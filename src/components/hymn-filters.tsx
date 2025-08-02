@@ -24,7 +24,7 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { GetHymnsSort, addHymn } from "@/app/actions";
+import { GetHymnsSort, HistoryFilter, addHymn } from "@/app/actions";
 import { toast } from "sonner";
 import { debounce } from "lodash";
 
@@ -35,6 +35,7 @@ type FormErrors = {
 // localStorage keys
 const SEARCH_STORAGE_KEY = "choirtrack-search";
 const SORT_STORAGE_KEY = "choirtrack-sort";
+const HISTORY_FILTER_STORAGE_KEY = "choirtrack-history-filter";
 
 export function HymnFilters() {
   const router = useRouter();
@@ -69,47 +70,77 @@ export function HymnFilters() {
     return paramSort || "last-sung-desc";
   });
 
-  const debouncedUpdateParams = useRef(
-    debounce((newSearchTerm: string, currentSortOrder: GetHymnsSort) => {
-      const params = new URLSearchParams(searchParams);
-      if (newSearchTerm) {
-        params.set("search", newSearchTerm);
-      } else {
-        params.delete("search");
-      }
-      if (currentSortOrder && currentSortOrder !== "last-sung-desc") {
-        params.set("sort", currentSortOrder);
-      } else {
-        params.delete("sort");
-      }
+  // Initialize history filter from URL params, localStorage, or "all" as default
+  const [historyFilter, setHistoryFilter] = useState<HistoryFilter>(() => {
+    const paramFilter = searchParams.get(
+      "historyFilter"
+    ) as HistoryFilter | null;
+    if (typeof window !== "undefined") {
+      const storedFilter = localStorage.getItem(
+        HISTORY_FILTER_STORAGE_KEY
+      ) as HistoryFilter | null;
+      return paramFilter || storedFilter || "all";
+    }
+    return paramFilter || "all";
+  });
 
-      startTransition(() => {
-        router.push(`${pathname}?${params.toString()}`, { scroll: false });
-      });
-    }, 300)
+  const debouncedUpdateParams = useRef(
+    debounce(
+      (
+        newSearchTerm: string,
+        currentSortOrder: GetHymnsSort,
+        currentHistoryFilter: HistoryFilter
+      ) => {
+        const params = new URLSearchParams(searchParams);
+        if (newSearchTerm) {
+          params.set("search", newSearchTerm);
+        } else {
+          params.delete("search");
+        }
+        if (currentSortOrder && currentSortOrder !== "last-sung-desc") {
+          params.set("sort", currentSortOrder);
+        } else {
+          params.delete("sort");
+        }
+        if (currentHistoryFilter && currentHistoryFilter !== "all") {
+          params.set("historyFilter", currentHistoryFilter);
+        } else {
+          params.delete("historyFilter");
+        }
+
+        startTransition(() => {
+          router.push(`${pathname}?${params.toString()}`, { scroll: false });
+        });
+      },
+      300
+    )
   ).current;
 
   useEffect(() => {
     const paramSearch = searchParams.get("search") || "";
     const paramSort =
       (searchParams.get("sort") as GetHymnsSort | null) || "last-sung-desc";
+    const paramHistoryFilter =
+      (searchParams.get("historyFilter") as HistoryFilter | null) || "all";
     setSearchTerm(paramSearch);
     setSortOrder(paramSort);
+    setHistoryFilter(paramHistoryFilter);
   }, [searchParams]);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
       localStorage.setItem(SEARCH_STORAGE_KEY, searchTerm);
       localStorage.setItem(SORT_STORAGE_KEY, sortOrder);
+      localStorage.setItem(HISTORY_FILTER_STORAGE_KEY, historyFilter);
     }
-  }, [searchTerm, sortOrder]);
+  }, [searchTerm, sortOrder, historyFilter]);
 
   useEffect(() => {
-    debouncedUpdateParams(searchTerm, sortOrder);
+    debouncedUpdateParams(searchTerm, sortOrder, historyFilter);
     return () => {
       debouncedUpdateParams.cancel();
     };
-  }, [searchTerm, sortOrder, debouncedUpdateParams]);
+  }, [searchTerm, sortOrder, historyFilter, debouncedUpdateParams]);
 
   useEffect(() => {
     if (!isAddDialogOpen) {
@@ -125,6 +156,11 @@ export function HymnFilters() {
   const handleSortChange = (value: string) => {
     const newSortOrder = value as GetHymnsSort;
     setSortOrder(newSortOrder);
+  };
+
+  const handleHistoryFilterChange = (value: string) => {
+    const newHistoryFilter = value as HistoryFilter;
+    setHistoryFilter(newHistoryFilter);
   };
 
   const handleClearSearch = () => {
@@ -198,6 +234,21 @@ export function HymnFilters() {
           <SelectItem value="title-desc">Title (Z-A)</SelectItem>
           <SelectItem value="last-sung-desc">Last Sung (Newest)</SelectItem>
           <SelectItem value="last-sung-asc">Last Sung (Oldest)</SelectItem>
+        </SelectContent>
+      </Select>
+
+      <Select
+        value={historyFilter}
+        onValueChange={handleHistoryFilterChange}
+        disabled={isPending}
+      >
+        <SelectTrigger className="w-full sm:w-[180px]">
+          <SelectValue placeholder="Filter by..." />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">All Songs</SelectItem>
+          <SelectItem value="with-history">With History</SelectItem>
+          <SelectItem value="no-history">No History</SelectItem>
         </SelectContent>
       </Select>
 

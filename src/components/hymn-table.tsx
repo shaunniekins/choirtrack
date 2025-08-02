@@ -3,14 +3,6 @@
 
 import React, { useState, useTransition, useRef, useEffect } from "react";
 import { format, isToday, isYesterday, differenceInDays } from "date-fns";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -152,37 +144,33 @@ export function HymnTable({ hymns }: HymnTableProps) {
   return (
     <>
       <div className="rounded-md border overflow-hidden">
-        <Table>
-          <TableHeader className="bg-muted/50">
-            <TableRow>
-              <TableHead className="w-full px-4 py-3 text-left text-sm font-medium text-muted-foreground">
-                Title
-              </TableHead>
-              <TableHead className="px-4 py-3 text-center text-sm font-medium text-muted-foreground">
-                Last Sung
-              </TableHead>
-              <TableHead className="px-4 py-3 text-center text-sm font-medium text-muted-foreground">
-                Actions
-              </TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {hymns.length === 0 ? (
-              <TableRow>
-                <TableCell
-                  colSpan={3}
-                  className="h-24 text-center text-muted-foreground px-4 py-4"
-                >
-                  No music found.
-                </TableCell>
-              </TableRow>
-            ) : (
-              hymns.map((hymn) => (
-                <TableRow key={hymn.id} className="hover:bg-muted/20">
-                  <TableCell className="px-4 py-3 font-medium align-middle">
-                    {hymn.title}
-                  </TableCell>
-                  <TableCell className="px-4 py-3 text-muted-foreground align-middle text-center text-sm">
+        <div className="bg-muted/50 border-b">
+          <div className="h-12 grid grid-cols-[1fr_auto] sm:grid-cols-[1fr_120px_200px] items-center px-4 gap-4">
+            <div className="text-left text-sm font-medium text-muted-foreground">
+              Title
+            </div>
+            <div className="hidden sm:block text-center text-sm font-medium text-muted-foreground">
+              Last Sung
+            </div>
+            <div className="text-center text-sm font-medium text-muted-foreground">
+              Actions
+            </div>
+          </div>
+        </div>
+        <div className="divide-y divide-border">
+          {hymns.length === 0 ? (
+            <div className="h-24 flex items-center justify-center text-muted-foreground px-4 py-4">
+              No music found.
+            </div>
+          ) : (
+            hymns.map((hymn) => (
+              <div
+                key={hymn.id}
+                className="grid grid-cols-[1fr_auto] sm:grid-cols-[1fr_120px_200px] items-center px-4 py-3 hover:bg-muted/20 gap-4"
+              >
+                <div className="font-medium min-w-0">
+                  <div className="truncate">{hymn.title}</div>
+                  <div className="sm:hidden text-xs text-muted-foreground mt-1">
                     {hymn.lastSungDate ? (
                       <span title={format(hymn.lastSungDate, "PPP")}>
                         {formatRelativeDate(hymn.lastSungDate)}
@@ -190,83 +178,88 @@ export function HymnTable({ hymns }: HymnTableProps) {
                     ) : (
                       "Never"
                     )}
-                  </TableCell>
-                  <TableCell className="px-4 py-3 text-right align-middle space-x-1">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={() => handleOpenHistoryModal(hymn.id)}
-                      title="View History"
-                    >
-                      <HistoryIcon className="h-4 w-4" />
-                      <span className="sr-only">View History</span>
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={() => handleOpenEditDialog(hymn)}
-                      title="Edit Title"
-                    >
-                      <PencilIcon className="h-4 w-4" />
-                      <span className="sr-only">Edit Title</span>
-                    </Button>
-                    <Popover
-                      open={popoverOpenState[hymn.id] || false}
-                      onOpenChange={(open) =>
-                        handlePopoverOpenChange(hymn.id, open)
-                      }
-                    >
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-8 px-3"
-                          disabled={
-                            isLoggingPending && loggingHymnId === hymn.id
-                          }
-                          title="Log Usage"
-                        >
-                          {isLoggingPending && loggingHymnId === hymn.id ? (
-                            <Loader2 className="mr-1 h-4 w-4 animate-spin" />
-                          ) : (
-                            <CalendarIcon className="mr-1 h-4 w-4" />
-                          )}
-                          Log
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-4 space-y-2">
-                        <p className="text-sm font-medium">Select Sung Date</p>
-                        <DatePicker
-                          date={selectedDate}
-                          setDate={setSelectedDate}
-                          disabled={
-                            isLoggingPending && loggingHymnId === hymn.id
-                          }
-                        />
-                        <Button
-                          onClick={() => handleLogUsage(hymn.id)}
-                          disabled={
-                            !selectedDate ||
-                            (isLoggingPending && loggingHymnId === hymn.id)
-                          }
-                          size="sm"
-                          className="w-full h-8"
-                        >
-                          {isLoggingPending && loggingHymnId === hymn.id ? (
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          ) : null}
-                          Confirm Log
-                        </Button>
-                      </PopoverContent>
-                    </Popover>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+                  </div>
+                </div>
+                <div className="hidden sm:block text-muted-foreground text-center text-sm">
+                  {hymn.lastSungDate ? (
+                    <span title={format(hymn.lastSungDate, "PPP")}>
+                      {formatRelativeDate(hymn.lastSungDate)}
+                    </span>
+                  ) : (
+                    "Never"
+                  )}
+                </div>
+                <div className="flex items-center justify-end space-x-1">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => handleOpenHistoryModal(hymn.id)}
+                    title="View History"
+                  >
+                    <HistoryIcon className="h-4 w-4" />
+                    <span className="sr-only">View History</span>
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => handleOpenEditDialog(hymn)}
+                    title="Edit Title"
+                  >
+                    <PencilIcon className="h-4 w-4" />
+                    <span className="sr-only">Edit Title</span>
+                  </Button>
+                  <Popover
+                    open={popoverOpenState[hymn.id] || false}
+                    onOpenChange={(open) =>
+                      handlePopoverOpenChange(hymn.id, open)
+                    }
+                  >
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 px-2 sm:px-3"
+                        disabled={isLoggingPending && loggingHymnId === hymn.id}
+                        title="Log Usage"
+                      >
+                        {isLoggingPending && loggingHymnId === hymn.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <CalendarIcon className="h-4 w-4" />
+                        )}
+                        <span className="hidden sm:inline ml-1">Log</span>
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-4 space-y-2">
+                      <p className="text-sm font-medium">Select Sung Date</p>
+                      <DatePicker
+                        date={selectedDate}
+                        setDate={setSelectedDate}
+                        disabled={isLoggingPending && loggingHymnId === hymn.id}
+                      />
+                      <Button
+                        onClick={() => handleLogUsage(hymn.id)}
+                        disabled={
+                          !selectedDate ||
+                          (isLoggingPending && loggingHymnId === hymn.id)
+                        }
+                        size="sm"
+                        className="w-full h-8"
+                      >
+                        {isLoggingPending && loggingHymnId === hymn.id ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : null}
+                        Confirm Log
+                      </Button>
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
       </div>
 
       <Dialog
