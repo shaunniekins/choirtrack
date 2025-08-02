@@ -42,11 +42,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 interface HymnListInfiniteProps {
   initialHymns: HymnWithLastSung[];
   initialHasMore: boolean;
+  onRefreshRef?: React.MutableRefObject<(() => void) | null>;
 }
 
 export function HymnListInfinite({
   initialHymns,
   initialHasMore,
+  onRefreshRef,
 }: HymnListInfiniteProps) {
   const searchParams = useSearchParams();
   const [hymns, setHymns] = useState<HymnWithLastSung[]>(initialHymns);
@@ -103,6 +105,34 @@ export function HymnListInfinite({
       }
     });
   }, [search, sort, historyFilter, page, isLoading, hasMore]);
+
+  // Refresh function to reload data from the beginning
+  const refreshData = useCallback(async () => {
+    setIsInitialLoad(true);
+    startTransition(async () => {
+      const result = await getHymns({
+        search,
+        sort,
+        historyFilter,
+        page: 1,
+        limit: 20,
+      });
+
+      if (result.success) {
+        setHymns(result.data);
+        setPage(1);
+        setHasMore(result.pagination?.hasMore || false);
+      }
+      setIsInitialLoad(false);
+    });
+  }, [search, sort, historyFilter]);
+
+  // Expose refresh function via ref
+  useEffect(() => {
+    if (onRefreshRef) {
+      onRefreshRef.current = refreshData;
+    }
+  }, [refreshData, onRefreshRef]);
 
   // Intersection Observer for infinite scroll
   useEffect(() => {

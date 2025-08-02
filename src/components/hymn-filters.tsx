@@ -32,12 +32,16 @@ type FormErrors = {
   title?: string[];
 };
 
+interface HymnFiltersProps {
+  onHymnAdded?: () => void;
+}
+
 // localStorage keys
 const SEARCH_STORAGE_KEY = "choirtrack-search";
 const SORT_STORAGE_KEY = "choirtrack-sort";
 const HISTORY_FILTER_STORAGE_KEY = "choirtrack-history-filter";
 
-export function HymnFilters() {
+export function HymnFilters({ onHymnAdded }: HymnFiltersProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -181,6 +185,10 @@ export function HymnFilters() {
       if (result.success) {
         toast.success(result.message || "Hymn added successfully!");
         setIsAddDialogOpen(false);
+        // Call the callback to refresh the list
+        if (onHymnAdded) {
+          onHymnAdded();
+        }
       } else {
         if (result.issues) {
           setFormErrors(result.issues);

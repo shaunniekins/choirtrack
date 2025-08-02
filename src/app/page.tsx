@@ -1,6 +1,5 @@
 import { Suspense } from "react";
-import { HymnListInfinite } from "@/components/hymn-list-infinite";
-import { HymnFilters } from "@/components/hymn-filters";
+import { HymnListWrapper } from "@/components/hymn-list-wrapper";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getHymns, GetHymnsSort, HistoryFilter } from "./actions";
 // Import the SignOutButton
@@ -69,7 +68,7 @@ async function HymnListLoader({
   }
 
   return (
-    <HymnListInfinite
+    <HymnListWrapper
       initialHymns={result.data ?? []}
       initialHasMore={result.pagination?.hasMore || false}
     />
@@ -79,7 +78,7 @@ async function HymnListLoader({
 // Loading Skeleton Component
 function HymnTableSkeleton() {
   return (
-    <div className="rounded-md border">
+    <div className="flex-shrink-0 container mx-auto px-4 lg:px-52 py-4">
       {/* Header */}
       <div className="h-full bg-muted/50 flex items-center px-4 border-b">
         <Skeleton className="h-4 w-[50%]" />
@@ -117,15 +116,11 @@ export default async function HomePage({
           <h1 className="text-3xl font-bold">ChoirTrack</h1>
           <SignOutButton />
         </div>
-
-        <HymnFilters />
       </div>
 
-      <div className="flex-1 overflow-hidden container mx-auto px-4 lg:px-52 pb-8">
-        <Suspense fallback={<HymnTableSkeleton />}>
-          <HymnListLoader searchParams={searchParams} />
-        </Suspense>
-      </div>
+      <Suspense fallback={<HymnTableSkeleton />}>
+        <HymnListLoader searchParams={searchParams} />
+      </Suspense>
     </main>
   );
 }
