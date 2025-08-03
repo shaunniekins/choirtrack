@@ -2,10 +2,8 @@
 
 import React, { useState, useTransition, useEffect } from "react";
 import { format } from "date-fns";
-// Remove AlertTriangle from imports
 import { Loader2, XCircle, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-
 import {
   Dialog,
   DialogContent,
@@ -14,7 +12,6 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-// Import Alert Dialog components
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,7 +24,6 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-// Import deleteHymn action
 import { getHymnWithHistory, removeHymnUsage, deleteHymn } from "@/app/actions";
 import { HymnWithRecentHistory } from "@/types";
 
@@ -35,31 +31,38 @@ interface HymnHistoryModalProps {
   hymnId: string | null;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
+  onDataChanged?: () => void;
 }
 
 export function HymnHistoryModal({
   hymnId,
   isOpen,
   onOpenChange,
+  onDataChanged,
 }: HymnHistoryModalProps) {
+  // State
   const [hymnData, setHymnData] = useState<HymnWithRecentHistory | null>(null);
-  const [isLoadingData, startDataTransition] = useTransition();
-  const [isRemovingUsage, startRemovalTransition] = useTransition();
-  // Add state for hymn deletion
-  const [isDeletingHymn, startDeleteTransition] = useTransition();
   const [removingHistoryId, setRemovingHistoryId] = useState<string | null>(
     null
   );
   const [error, setError] = useState<string | null>(null);
-  // State for confirmation dialog
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
+  // Transitions
+  const [isLoadingData, startDataTransition] = useTransition();
+  const [isRemovingUsage, startRemovalTransition] = useTransition();
+  const [isDeletingHymn, startDeleteTransition] = useTransition();
+
+  // Effects
   useEffect(() => {
     if (isOpen && hymnId) {
-      setError(null); // Reset error on open
-      setHymnData(null); // Reset data
-      setRemovingHistoryId(null); // Reset removing state
-      setShowDeleteConfirm(false); // Reset confirm dialog state
+      // Reset state on open
+      setError(null);
+      setHymnData(null);
+      setRemovingHistoryId(null);
+      setShowDeleteConfirm(false);
+
+      // Load hymn data
       startDataTransition(async () => {
         const result = await getHymnWithHistory(hymnId);
         if (result.success && result.data) {
@@ -70,10 +73,12 @@ export function HymnHistoryModal({
         }
       });
     }
-  }, [isOpen, hymnId]); // Rerun when modal opens or hymnId changes
+  }, [isOpen, hymnId]);
 
+  // Event handlers
   const handleRemoveUsage = (usageHistoryId: string) => {
     if (!hymnId) return;
+
     setRemovingHistoryId(usageHistoryId);
     startRemovalTransition(async () => {
       const result = await removeHymnUsage(usageHistoryId);
@@ -84,18 +89,16 @@ export function HymnHistoryModal({
         if (refreshResult.success && refreshResult.data) {
           setHymnData(refreshResult.data);
         } else {
-          // Handle potential error during refresh
           setError(refreshResult.error || "Failed to refresh history.");
           toast.error(refreshResult.error || "Could not refresh details.");
         }
       } else {
         toast.error(result.error || "Failed to remove usage record.");
       }
-      setRemovingHistoryId(null); // Reset removing state regardless of outcome
+      setRemovingHistoryId(null);
     });
   };
 
-  // Function to handle hymn deletion
   const handleDeleteHymn = () => {
     if (!hymnId) return;
 
@@ -103,22 +106,26 @@ export function HymnHistoryModal({
       const result = await deleteHymn(hymnId);
       if (result.success) {
         toast.success(result.message || "Hymn deleted.");
-        handleClose(); // Close modal on success
+        handleClose();
+        // Call the callback to refresh the main list
+        if (onDataChanged) {
+          onDataChanged();
+        }
       } else {
         toast.error(result.error || "Failed to delete hymn.");
-        setShowDeleteConfirm(false); // Close confirm dialog on error
+        setShowDeleteConfirm(false);
       }
     });
   };
 
   const handleClose = () => {
     onOpenChange(false);
-    setShowDeleteConfirm(false); // Ensure confirm dialog is closed
+    setShowDeleteConfirm(false);
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[480px]">
+      <DialogContent className="sm:max-w-[480px] max-h-[90vh] mx-4 my-auto">
         <DialogHeader>
           <DialogTitle>{hymnData?.title ?? "Loading Hymn..."}</DialogTitle>
           <DialogDescription>
@@ -201,7 +208,7 @@ export function HymnHistoryModal({
                 Delete Hymn
               </Button>
             </AlertDialogTrigger>
-            <AlertDialogContent>
+            <AlertDialogContent className="mx-4 my-auto">
               <AlertDialogHeader>
                 <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                 <AlertDialogDescription>

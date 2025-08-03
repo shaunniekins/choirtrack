@@ -28,32 +28,36 @@ import { GetHymnsSort, HistoryFilter, addHymn } from "@/app/actions";
 import { toast } from "sonner";
 import { debounce } from "lodash";
 
+// Types
 type FormErrors = {
   title?: string[];
 };
 
 interface HymnFiltersProps {
-  onHymnAdded?: () => void;
+  onDataChanged?: () => void;
 }
 
-// localStorage keys
+// Constants
 const SEARCH_STORAGE_KEY = "choirtrack-search";
 const SORT_STORAGE_KEY = "choirtrack-sort";
 const HISTORY_FILTER_STORAGE_KEY = "choirtrack-history-filter";
 
-export function HymnFilters({ onHymnAdded }: HymnFiltersProps) {
+export function HymnFilters({ onDataChanged }: HymnFiltersProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const formRef = useRef<HTMLFormElement>(null);
+
+  // Transition states
   const [isPending, startTransition] = useTransition();
   const [isAddingHymn, startAddHymnTransition] = useTransition();
 
+  // Form states
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [newHymnTitle, setNewHymnTitle] = useState("");
   const [formErrors, setFormErrors] = useState<FormErrors>({});
-  const formRef = useRef<HTMLFormElement>(null);
 
-  // Initialize search term from URL params or localStorage
+  // Filter states - initialized from URL params or localStorage
   const [searchTerm, setSearchTerm] = useState(() => {
     const paramSearch = searchParams.get("search") || "";
     if (typeof window !== "undefined") {
@@ -62,7 +66,6 @@ export function HymnFilters({ onHymnAdded }: HymnFiltersProps) {
     return paramSearch;
   });
 
-  // Initialize sort order from URL params, localStorage, or "last-sung-desc" as default
   const [sortOrder, setSortOrder] = useState<GetHymnsSort>(() => {
     const paramSort = searchParams.get("sort") as GetHymnsSort | null;
     if (typeof window !== "undefined") {
@@ -74,7 +77,6 @@ export function HymnFilters({ onHymnAdded }: HymnFiltersProps) {
     return paramSort || "last-sung-desc";
   });
 
-  // Initialize history filter from URL params, localStorage, or "all" as default
   const [historyFilter, setHistoryFilter] = useState<HistoryFilter>(() => {
     const paramFilter = searchParams.get(
       "historyFilter"
@@ -88,6 +90,7 @@ export function HymnFilters({ onHymnAdded }: HymnFiltersProps) {
     return paramFilter || "all";
   });
 
+  // Debounced URL update function
   const debouncedUpdateParams = useRef(
     debounce(
       (
@@ -96,16 +99,19 @@ export function HymnFilters({ onHymnAdded }: HymnFiltersProps) {
         currentHistoryFilter: HistoryFilter
       ) => {
         const params = new URLSearchParams(searchParams);
+
         if (newSearchTerm) {
           params.set("search", newSearchTerm);
         } else {
           params.delete("search");
         }
+
         if (currentSortOrder && currentSortOrder !== "last-sung-desc") {
           params.set("sort", currentSortOrder);
         } else {
           params.delete("sort");
         }
+
         if (currentHistoryFilter && currentHistoryFilter !== "all") {
           params.set("historyFilter", currentHistoryFilter);
         } else {
@@ -120,12 +126,14 @@ export function HymnFilters({ onHymnAdded }: HymnFiltersProps) {
     )
   ).current;
 
+  // Effects
   useEffect(() => {
     const paramSearch = searchParams.get("search") || "";
     const paramSort =
       (searchParams.get("sort") as GetHymnsSort | null) || "last-sung-desc";
     const paramHistoryFilter =
       (searchParams.get("historyFilter") as HistoryFilter | null) || "all";
+
     setSearchTerm(paramSearch);
     setSortOrder(paramSort);
     setHistoryFilter(paramHistoryFilter);
@@ -153,18 +161,17 @@ export function HymnFilters({ onHymnAdded }: HymnFiltersProps) {
     }
   }, [isAddDialogOpen]);
 
+  // Event handlers
   const handleSearchTermChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
   };
 
   const handleSortChange = (value: string) => {
-    const newSortOrder = value as GetHymnsSort;
-    setSortOrder(newSortOrder);
+    setSortOrder(value as GetHymnsSort);
   };
 
   const handleHistoryFilterChange = (value: string) => {
-    const newHistoryFilter = value as HistoryFilter;
-    setHistoryFilter(newHistoryFilter);
+    setHistoryFilter(value as HistoryFilter);
   };
 
   const handleClearSearch = () => {
@@ -186,8 +193,8 @@ export function HymnFilters({ onHymnAdded }: HymnFiltersProps) {
         toast.success(result.message || "Hymn added successfully!");
         setIsAddDialogOpen(false);
         // Call the callback to refresh the list
-        if (onHymnAdded) {
-          onHymnAdded();
+        if (onDataChanged) {
+          onDataChanged();
         }
       } else {
         if (result.issues) {
@@ -200,6 +207,7 @@ export function HymnFilters({ onHymnAdded }: HymnFiltersProps) {
 
   return (
     <div className="flex flex-col sm:flex-row gap-2 mb-4 items-center">
+      {/* Search Input */}
       <div className="relative flex-grow w-full sm:w-auto">
         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
           {isPending ? (
@@ -229,6 +237,7 @@ export function HymnFilters({ onHymnAdded }: HymnFiltersProps) {
         )}
       </div>
 
+      {/* Sort Select */}
       <Select
         value={sortOrder}
         onValueChange={handleSortChange}
@@ -245,6 +254,7 @@ export function HymnFilters({ onHymnAdded }: HymnFiltersProps) {
         </SelectContent>
       </Select>
 
+      {/* History Filter Select */}
       <Select
         value={historyFilter}
         onValueChange={handleHistoryFilterChange}
@@ -260,13 +270,14 @@ export function HymnFilters({ onHymnAdded }: HymnFiltersProps) {
         </SelectContent>
       </Select>
 
+      {/* Add New Hymn Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
         <DialogTrigger asChild>
           <Button className="w-full sm:w-auto">
             <PlusIcon className="mr-2 h-4 w-4" /> Add New Music
           </Button>
         </DialogTrigger>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[425px] max-h-[90vh] mx-4 my-auto">
           <DialogHeader>
             <DialogTitle>Add New Hymn</DialogTitle>
             <DialogDescription>

@@ -9,13 +9,15 @@ import React, {
 } from "react";
 import { useSearchParams } from "next/navigation";
 import { format, isToday, isYesterday, differenceInDays } from "date-fns";
+import { toast } from "sonner";
+import { CalendarIcon, Loader2, PencilIcon, HistoryIcon } from "lucide-react";
+
+// UI Components
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { DatePicker } from "@/components/ui/date-picker";
-import { logHymnUsage, editHymn } from "@/app/actions";
-import { toast } from "sonner";
-import { CalendarIcon, Loader2, PencilIcon, HistoryIcon } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Popover,
   PopoverContent,
@@ -30,25 +32,33 @@ import {
   DialogFooter,
   DialogClose,
 } from "@/components/ui/dialog";
+
+// Local Components
 import { HymnHistoryModal } from "./hymn-history-modal";
+
+// Actions and Types
 import {
   getHymns,
   GetHymnsSort,
   HistoryFilter,
   HymnWithLastSung,
+  logHymnUsage,
+  editHymn,
 } from "@/app/actions";
-import { Skeleton } from "@/components/ui/skeleton";
 
+// Types
 interface HymnListInfiniteProps {
   initialHymns: HymnWithLastSung[];
   initialHasMore: boolean;
   onRefreshRef?: React.MutableRefObject<(() => void) | null>;
+  onDataChanged?: () => void;
 }
 
 export function HymnListInfinite({
   initialHymns,
   initialHasMore,
   onRefreshRef,
+  onDataChanged,
 }: HymnListInfiniteProps) {
   const searchParams = useSearchParams();
   const [hymns, setHymns] = useState<HymnWithLastSung[]>(initialHymns);
@@ -164,6 +174,7 @@ export function HymnListInfinite({
         isLoading={isLoading}
         loadingRef={loadingRef}
         search={search}
+        onDataChanged={onDataChanged}
       />
     </div>
   );
@@ -176,12 +187,14 @@ function HymnTableWithInfiniteScroll({
   isLoading,
   loadingRef,
   search,
+  onDataChanged,
 }: {
   hymns: HymnWithLastSung[];
   hasMore: boolean;
   isLoading: boolean;
   loadingRef: React.RefObject<HTMLDivElement | null>;
   search?: string;
+  onDataChanged?: () => void;
 }) {
   return (
     <div className="rounded-md border overflow-hidden h-full">
@@ -212,7 +225,11 @@ function HymnTableWithInfiniteScroll({
           ) : (
             <>
               {hymns.map((hymn) => (
-                <HymnRow key={hymn.id} hymn={hymn} />
+                <HymnRow
+                  key={hymn.id}
+                  hymn={hymn}
+                  onDataChanged={onDataChanged}
+                />
               ))}
 
               {/* Loading indicator and infinite scroll trigger */}
@@ -277,7 +294,13 @@ function HymnTableSkeleton() {
   );
 }
 
-function HymnRow({ hymn }: { hymn: HymnWithLastSung }) {
+function HymnRow({
+  hymn,
+  onDataChanged,
+}: {
+  hymn: HymnWithLastSung;
+  onDataChanged?: () => void;
+}) {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [loggingHymnId, setLoggingHymnId] = useState<string | null>(null);
   const [isLoggingPending, startLoggingTransition] = useTransition();
@@ -450,7 +473,7 @@ function HymnRow({ hymn }: { hymn: HymnWithLastSung }) {
       </div>
 
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[425px] max-h-[90vh] mx-4 my-auto">
           <DialogHeader>
             <DialogTitle>Edit Hymn Title</DialogTitle>
             <DialogDescription>
@@ -507,6 +530,7 @@ function HymnRow({ hymn }: { hymn: HymnWithLastSung }) {
         hymnId={hymn.id}
         isOpen={isHistoryModalOpen}
         onOpenChange={setIsHistoryModalOpen}
+        onDataChanged={onDataChanged}
       />
     </>
   );
