@@ -160,10 +160,10 @@ function HymnTableWithInfiniteScroll({
   onDataChanged?: () => void;
 }) {
   return (
-    <div className="rounded-md border overflow-hidden h-full">
+    <div className="rounded-xl border bg-card text-card-foreground shadow-md overflow-hidden h-full">
       <div className="h-full flex flex-col">
         {/* Fixed Header */}
-        <div className="bg-muted/50 border-b">
+        <div className="bg-muted border-b">
           <div className="h-12 grid grid-cols-[1fr_auto] sm:grid-cols-[1fr_120px_200px] items-center px-4 gap-4">
             <div className="text-left text-sm font-medium text-muted-foreground">
               Title
@@ -226,9 +226,9 @@ function HymnTableWithInfiniteScroll({
 // Loading Skeleton Component
 function HymnTableSkeleton() {
   return (
-    <div className="rounded-md border h-full">
+    <div className="rounded-xl border bg-card shadow-md h-full">
       {/* Header */}
-      <div className="h-12 bg-muted/50 border-b">
+      <div className="h-12 bg-muted border-b">
         <div className="grid grid-cols-[1fr_auto] sm:grid-cols-[1fr_120px_200px] items-center px-4 gap-4 h-full">
           <Skeleton className="h-4" />
           <Skeleton className="h-4 hidden sm:block" />
@@ -346,7 +346,7 @@ function HymnRow({
 
   return (
     <>
-      <div className="grid grid-cols-[1fr_auto] sm:grid-cols-[1fr_120px_200px] items-center px-4 py-3 border-b hover:bg-muted/20 gap-4">
+      <div className="grid grid-cols-[1fr_auto] sm:grid-cols-[1fr_120px_200px] items-center px-4 py-4 border-b hover:bg-muted/30 gap-4 transition-all duration-200 ease-in-out">
         <div className="font-medium min-w-0">
           <div className="truncate">{hymn.title}</div>
           <div className="sm:hidden text-xs text-muted-foreground mt-1">

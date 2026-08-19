@@ -1,4 +1,3 @@
-// src/components/hymn-filters.tsx
 "use client";
 
 import React, { useState, useTransition, useEffect, useRef } from "react";
@@ -206,7 +205,7 @@ export function HymnFilters({ onDataChanged }: HymnFiltersProps) {
   };
 
   return (
-    <div className="flex flex-col sm:flex-row gap-2 mb-4 items-center">
+    <div className="flex flex-col sm:flex-row gap-4 mb-6 items-center">
       {/* Search Input */}
       <div className="relative flex-grow w-full sm:w-auto">
         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
@@ -217,11 +216,10 @@ export function HymnFilters({ onDataChanged }: HymnFiltersProps) {
           )}
         </span>
         <Input
-          type="text"
-          placeholder="Search by title..."
+          placeholder="Search hymns..."
           value={searchTerm}
           onChange={handleSearchTermChange}
-          className="pl-10 pr-10"
+          className="pl-10 h-11 bg-card shadow-sm transition-all focus:ring-primary focus:border-primary text-base"
         />
         {searchTerm && (
           <Button
@@ -243,7 +241,7 @@ export function HymnFilters({ onDataChanged }: HymnFiltersProps) {
         onValueChange={handleSortChange}
         disabled={isPending}
       >
-        <SelectTrigger className="w-full sm:w-[200px]">
+        <SelectTrigger className="w-full sm:w-[200px] h-11 bg-card shadow-sm">
           <SelectValue placeholder="Sort by..." />
         </SelectTrigger>
         <SelectContent>
@@ -260,7 +258,7 @@ export function HymnFilters({ onDataChanged }: HymnFiltersProps) {
         onValueChange={handleHistoryFilterChange}
         disabled={isPending}
       >
-        <SelectTrigger className="w-full sm:w-[180px]">
+        <SelectTrigger className="w-full sm:w-[180px] h-11 bg-card shadow-sm">
           <SelectValue placeholder="Filter by..." />
         </SelectTrigger>
         <SelectContent>
@@ -270,67 +268,71 @@ export function HymnFilters({ onDataChanged }: HymnFiltersProps) {
         </SelectContent>
       </Select>
 
-      {/* Add New Hymn Dialog */}
-      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogTrigger asChild>
-          <Button className="w-full sm:w-auto">
-            <PlusIcon className="mr-2 h-4 w-4" /> Add New Music
-          </Button>
-        </DialogTrigger>
-        <DialogContent className="sm:max-w-[425px] max-h-[90vh] mx-4 my-auto">
-          <DialogHeader>
-            <DialogTitle>Add New Hymn</DialogTitle>
-            <DialogDescription>
-              Enter the details for the new hymn. Click save when you&apos;re
-              done.
-            </DialogDescription>
-          </DialogHeader>
-          <form
-            ref={formRef}
-            onSubmit={handleAddHymnSubmit}
-            className="grid gap-4 py-4"
-          >
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="title" className="text-right">
-                Title
-              </Label>
-              <div className="col-span-3">
-                <Input
-                  id="title"
-                  name="title"
-                  value={newHymnTitle}
-                  onChange={(e) => setNewHymnTitle(e.target.value)}
-                  className={formErrors.title ? "border-destructive" : ""}
-                  disabled={isAddingHymn}
-                />
-                {formErrors.title && (
-                  <p className="text-xs text-destructive mt-1">
-                    {formErrors.title.join(", ")}
-                  </p>
-                )}
-              </div>
-            </div>
-          </form>
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button type="button" variant="outline" disabled={isAddingHymn}>
-                Cancel
-              </Button>
-            </DialogClose>
-            <Button
-              type="submit"
-              form={formRef.current ? formRef.current.id : undefined}
-              disabled={isAddingHymn}
-              onClick={() => formRef.current?.requestSubmit()}
-            >
-              {isAddingHymn && (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              )}
-              Save Hymn
+      {/* Buttons */}
+      <div className="flex gap-2 w-full sm:w-auto">
+        <Button type="button" variant="outline" onClick={handleClearSearch} className="w-full sm:w-auto transition-all hover:bg-muted h-11">
+          Clear
+        </Button>
+        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+          <DialogTrigger asChild>
+            <Button className="w-full sm:w-auto shadow-sm transition-all hover:-translate-y-[1px] hover:shadow-md h-11 px-6">
+              <PlusIcon className="mr-2 h-4 w-4" /> Add Hymn
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[425px] max-h-[90vh] mx-4 my-auto">
+            <DialogHeader>
+              <DialogTitle>Add New Hymn</DialogTitle>
+              <DialogDescription>
+                Enter the details for the new hymn. Click save when you&apos;re done.
+              </DialogDescription>
+            </DialogHeader>
+            <form
+              ref={formRef}
+              onSubmit={handleAddHymnSubmit}
+              className="grid gap-4 py-4"
+            >
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="title" className="text-right">
+                  Title
+                </Label>
+                <div className="col-span-3">
+                  <Input
+                    id="title"
+                    name="title"
+                    value={newHymnTitle}
+                    onChange={(e) => setNewHymnTitle(e.target.value)}
+                    className={formErrors.title ? "border-destructive" : ""}
+                    disabled={isAddingHymn}
+                  />
+                  {formErrors.title && (
+                    <p className="text-xs text-destructive mt-1">
+                      {formErrors.title.join(", ")}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </form>
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button type="button" variant="outline" disabled={isAddingHymn}>
+                  Cancel
+                </Button>
+              </DialogClose>
+              <Button
+                type="submit"
+                form={formRef.current ? formRef.current.id : undefined}
+                disabled={isAddingHymn}
+                onClick={() => formRef.current?.requestSubmit()}
+              >
+                {isAddingHymn && (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                )}
+                Save Hymn
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
     </div>
   );
 }

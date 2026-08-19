@@ -30,10 +30,10 @@ function HymnTableSkeleton() {
 
 export default function HomePage() {
   return (
-    <main className="h-[100svh] flex flex-col overflow-hidden">
-      <div className="flex-shrink-0 container mx-auto px-4 lg:px-52 py-4">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold">ChoirTrack</h1>
+    <main className="h-[100svh] flex flex-col overflow-hidden bg-background">
+      <div className="flex-shrink-0 container mx-auto px-4 lg:px-52 pt-8 pb-6">
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-4xl md:text-5xl font-heading text-primary tracking-tight">ChoirTrack</h1>
           <ImportExportButton />
         </div>
       </div>
