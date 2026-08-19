@@ -24,7 +24,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { getHymnWithHistory, removeHymnUsage, deleteHymn } from "@/app/actions";
+import { useHymnStore } from "@/lib/store";
 import { HymnWithRecentHistory } from "@/types";
 
 interface HymnHistoryModalProps {
@@ -40,6 +40,8 @@ export function HymnHistoryModal({
   onOpenChange,
   onDataChanged,
 }: HymnHistoryModalProps) {
+  const { getHymnWithHistory, removeHymnUsage, deleteHymn } = useHymnStore();
+  
   // State
   const [hymnData, setHymnData] = useState<HymnWithRecentHistory | null>(null);
   const [removingHistoryId, setRemovingHistoryId] = useState<string | null>(
@@ -63,8 +65,8 @@ export function HymnHistoryModal({
       setShowDeleteConfirm(false);
 
       // Load hymn data
-      startDataTransition(async () => {
-        const result = await getHymnWithHistory(hymnId);
+      startDataTransition(() => {
+        const result = getHymnWithHistory(hymnId);
         if (result.success && result.data) {
           setHymnData(result.data);
         } else {
@@ -73,19 +75,19 @@ export function HymnHistoryModal({
         }
       });
     }
-  }, [isOpen, hymnId]);
+  }, [isOpen, hymnId, getHymnWithHistory]);
 
   // Event handlers
   const handleRemoveUsage = (usageHistoryId: string) => {
     if (!hymnId) return;
 
     setRemovingHistoryId(usageHistoryId);
-    startRemovalTransition(async () => {
-      const result = await removeHymnUsage(usageHistoryId);
+    startRemovalTransition(() => {
+      const result = removeHymnUsage(usageHistoryId);
       if (result.success) {
         toast.success(result.message || "Usage record removed.");
         // Refresh data in the modal
-        const refreshResult = await getHymnWithHistory(hymnId);
+        const refreshResult = getHymnWithHistory(hymnId);
         if (refreshResult.success && refreshResult.data) {
           setHymnData(refreshResult.data);
         } else {
@@ -102,8 +104,8 @@ export function HymnHistoryModal({
   const handleDeleteHymn = () => {
     if (!hymnId) return;
 
-    startDeleteTransition(async () => {
-      const result = await deleteHymn(hymnId);
+    startDeleteTransition(() => {
+      const result = deleteHymn(hymnId);
       if (result.success) {
         toast.success(result.message || "Hymn deleted.");
         handleClose();

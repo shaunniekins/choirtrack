@@ -36,106 +36,69 @@ import {
 // Local Components
 import { HymnHistoryModal } from "./hymn-history-modal";
 
-// Actions and Types
-import {
-  getHymns,
-  GetHymnsSort,
-  HistoryFilter,
-  HymnWithLastSung,
-  logHymnUsage,
-  editHymn,
-} from "@/app/actions";
+// Store
+import { useHymnStore } from "@/lib/store";
+import { HymnWithLastSung } from "@/types";
 
-// Types
 interface HymnListInfiniteProps {
-  initialHymns: HymnWithLastSung[];
-  initialHasMore: boolean;
   onRefreshRef?: React.MutableRefObject<(() => void) | null>;
   onDataChanged?: () => void;
 }
 
 export function HymnListInfinite({
-  initialHymns,
-  initialHasMore,
   onRefreshRef,
   onDataChanged,
 }: HymnListInfiniteProps) {
   const searchParams = useSearchParams();
-  const [hymns, setHymns] = useState<HymnWithLastSung[]>(initialHymns);
+  const { getHymns, isLoading: isStoreLoading } = useHymnStore();
+  
+  const [hymns, setHymns] = useState<HymnWithLastSung[]>([]);
   const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(initialHasMore);
+  const [hasMore, setHasMore] = useState(false);
   const [isLoading, startTransition] = useTransition();
-  const [isInitialLoad, setIsInitialLoad] = useState(false);
   const loadingRef = useRef<HTMLDivElement>(null);
 
   // Extract search parameters
   const search = searchParams.get("search") || undefined;
-  const sort = (searchParams.get("sort") as GetHymnsSort) || "last-sung-desc";
-  const historyFilter =
-    (searchParams.get("historyFilter") as HistoryFilter) || "all";
+  const sort = searchParams.get("sort") || "last-sung-desc";
+  const historyFilter = searchParams.get("historyFilter") || "all";
 
-  // Reset when search parameters change
-  useEffect(() => {
-    setIsInitialLoad(true);
-    startTransition(async () => {
-      const result = await getHymns({
+  const fetchHymns = useCallback((pageToFetch: number, reset: boolean = false) => {
+    startTransition(() => {
+      const result = getHymns({
         search,
         sort,
         historyFilter,
-        page: 1,
+        page: pageToFetch,
         limit: 20,
       });
 
-      if (result.success) {
+      if (reset) {
         setHymns(result.data);
-        setPage(1);
-        setHasMore(result.pagination?.hasMore || false);
+      } else {
+        setHymns((prev) => [...prev, ...result.data]);
       }
-      setIsInitialLoad(false);
+      setPage(pageToFetch);
+      setHasMore(result.pagination?.hasMore || false);
     });
-  }, [search, sort, historyFilter]);
+  }, [getHymns, search, sort, historyFilter]);
+
+  // Initial fetch and param changes
+  useEffect(() => {
+    if (!isStoreLoading) {
+      fetchHymns(1, true);
+    }
+  }, [isStoreLoading, search, sort, historyFilter, fetchHymns]);
 
   const loadMore = useCallback(() => {
-    if (isLoading || !hasMore) return;
-
-    const nextPage = page + 1;
-    startTransition(async () => {
-      const result = await getHymns({
-        search,
-        sort,
-        historyFilter,
-        page: nextPage,
-        limit: 20,
-      });
-
-      if (result.success) {
-        setHymns((prev) => [...prev, ...result.data]);
-        setPage(nextPage);
-        setHasMore(result.pagination?.hasMore || false);
-      }
-    });
-  }, [search, sort, historyFilter, page, isLoading, hasMore]);
+    if (isLoading || !hasMore || isStoreLoading) return;
+    fetchHymns(page + 1, false);
+  }, [isLoading, hasMore, isStoreLoading, page, fetchHymns]);
 
   // Refresh function to reload data from the beginning
-  const refreshData = useCallback(async () => {
-    setIsInitialLoad(true);
-    startTransition(async () => {
-      const result = await getHymns({
-        search,
-        sort,
-        historyFilter,
-        page: 1,
-        limit: 20,
-      });
-
-      if (result.success) {
-        setHymns(result.data);
-        setPage(1);
-        setHasMore(result.pagination?.hasMore || false);
-      }
-      setIsInitialLoad(false);
-    });
-  }, [search, sort, historyFilter]);
+  const refreshData = useCallback(() => {
+    fetchHymns(1, true);
+  }, [fetchHymns]);
 
   // Expose refresh function via ref
   useEffect(() => {
@@ -148,7 +111,7 @@ export function HymnListInfinite({
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && hasMore && !isLoading) {
+        if (entries[0].isIntersecting && hasMore && !isLoading && !isStoreLoading) {
           loadMore();
         }
       },
@@ -160,9 +123,9 @@ export function HymnListInfinite({
     }
 
     return () => observer.disconnect();
-  }, [loadMore, hasMore, isLoading]);
+  }, [loadMore, hasMore, isLoading, isStoreLoading]);
 
-  if (isInitialLoad) {
+  if (isStoreLoading) {
     return <HymnTableSkeleton />;
   }
 
@@ -301,6 +264,7 @@ function HymnRow({
   hymn: HymnWithLastSung;
   onDataChanged?: () => void;
 }) {
+  const { logHymnUsage, editHymn } = useHymnStore();
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [loggingHymnId, setLoggingHymnId] = useState<string | null>(null);
   const [isLoggingPending, startLoggingTransition] = useTransition();
@@ -324,17 +288,15 @@ function HymnRow({
     }
 
     setLoggingHymnId(hymnId);
-    startLoggingTransition(async () => {
-      const result = await logHymnUsage(hymnId, selectedDate);
+    startLoggingTransition(() => {
+      const result = logHymnUsage(hymnId, selectedDate);
       if (result.success) {
         toast.success(result.message || "Usage logged successfully!");
         setSelectedDate(undefined);
         setPopoverOpenState((prev) => ({ ...prev, [hymnId]: false }));
+        if (onDataChanged) onDataChanged();
       } else {
         toast.error(result.error || "Failed to log usage.");
-        if (result.issues?.sungDate) {
-          toast.error(`Date Error: ${result.issues.sungDate.join(", ")}`);
-        }
       }
       setLoggingHymnId(null);
     });
@@ -347,21 +309,22 @@ function HymnRow({
     }
   };
 
-  const handleEditSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+  const handleEditSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setEditFormErrors({});
-    const formData = new FormData(event.currentTarget);
 
-    startEditTransition(async () => {
-      const result = await editHymn(hymn.id, formData);
+    startEditTransition(() => {
+      const result = editHymn(hymn.id, newTitle);
       if (result.success) {
         toast.success(result.message || "Hymn updated successfully!");
         setIsEditDialogOpen(false);
+        if (onDataChanged) onDataChanged();
       } else {
-        if (result.issues) {
-          setEditFormErrors(result.issues);
+        if (result.error) {
+          toast.error(result.error);
+        } else {
+          toast.error("Failed to update hymn.");
         }
-        toast.error(result.error || "Failed to update hymn.");
       }
     });
   };

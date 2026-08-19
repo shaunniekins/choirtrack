@@ -24,7 +24,8 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { GetHymnsSort, HistoryFilter, addHymn } from "@/app/actions";
+import { useHymnStore } from "@/lib/store";
+import { GetHymnsSort, HistoryFilter } from "@/types";
 import { toast } from "sonner";
 import { debounce } from "lodash";
 
@@ -47,6 +48,7 @@ export function HymnFilters({ onDataChanged }: HymnFiltersProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const formRef = useRef<HTMLFormElement>(null);
+  const { addHymn } = useHymnStore();
 
   // Transition states
   const [isPending, startTransition] = useTransition();
@@ -178,16 +180,14 @@ export function HymnFilters({ onDataChanged }: HymnFiltersProps) {
     setSearchTerm("");
   };
 
-  const handleAddHymnSubmit = async (
+  const handleAddHymnSubmit = (
     event: React.FormEvent<HTMLFormElement>
   ) => {
     event.preventDefault();
     setFormErrors({});
 
-    const formData = new FormData(event.currentTarget);
-
-    startAddHymnTransition(async () => {
-      const result = await addHymn(formData);
+    startAddHymnTransition(() => {
+      const result = addHymn(newHymnTitle);
 
       if (result.success) {
         toast.success(result.message || "Hymn added successfully!");
@@ -197,8 +197,8 @@ export function HymnFilters({ onDataChanged }: HymnFiltersProps) {
           onDataChanged();
         }
       } else {
-        if (result.issues) {
-          setFormErrors(result.issues);
+        if (result.error?.includes("Title")) {
+          setFormErrors({ title: [result.error] });
         }
         toast.error(result.error || "Failed to add hymn.");
       }
